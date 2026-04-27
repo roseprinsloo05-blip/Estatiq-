@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Estatiq — AI Property Intelligence</title>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#c8a96e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Estatiq"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500;600&display=swap');
+
+  :root {
+    --gold: #c8a96e; --gold-light: #e0c48a; --gold-dim: rgba(200,169,110,0.13); --gold-border: rgba(200,169,110,0.25);
+    --ink: #1a1714; --ink-mid: #2c2820; --ink-soft: rgba(26,23,20,0.5); --ink-xsoft: rgba(26,23,20,0.3);
+    --cream: #f6f1e9; --white: #fff;
+    --rose: #b5686f; --rose-dim: rgba(181,104,111,0.1);
+    --green: #4a8f6a; --green-dim: rgba(74,143,106,0.1);
+    --wa: #25d366;
+    --border: rgba(26,23,20,0.1);
+    --shadow-sm: 0 2px 8px rgba(26,23,20,0.06); --shadow-md: 0 4px 20px rgba(26,23,20,0.09); --shadow-lg: 0 12px 40px rgba(26,23,20,0.13);
+    --radius: 8px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+
+  /* ── SETUP ── */
+  .setup-overlay{position:fixed;inset:0;background:var(--ink);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding:2rem;animation:fadeIn .4s ease;overflow-y:auto;}
+  .setup-box{background:#221e18;border:1px solid var(--gold-border);border-radius:16px;padding:3rem;max-width:540px;width:100%;box-shadow:var(--shadow-lg);margin:auto;}
+  .setup-logo{font-family:'Playfair Display',serif;font-size:2rem;color:var(--gold);margin-bottom:.3rem}
+  .setup-logo em{font-style:italic;color:#fff}
+  .setup-tag{font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;color:rgba(200,169,110,.4);margin-bottom:2.5rem}
+  .setup-h{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic;color:#fff;margin-bottom:.4rem}
+  .setup-sub{font-size:.74rem;color:rgba(245,240,232,.4);margin-bottom:2rem;line-height:1.65}
+  .setup-fields{display:flex;flex-direction:column;gap:1rem;margin-bottom:1.8rem}
+  .sfg{display:flex;flex-direction:column;gap:.4rem}
+  .sfg label{font-size:.61rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(200,169,110,.55);font-weight:500}
+  .sfg input,.sfg select{background:rgba(255,255,255,.06);border:1px solid rgba(200,169,110,.2);border-radius:6px;padding:.75rem 1rem;color:#f5f0e8;font-family:'Jost',sans-serif;font-size:.9rem;outline:none;width:100%;transition:border-color .2s,background .2s}
+  .sfg input:focus,.sfg select:focus{border-color:var(--gold);background:rgba(255,255,255,.09)}
+  .sfg input::placeholder{color:rgba(245,240,232,.22)}
+  .sfg select option{background:#2c2820}
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .setup-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:8px;color:var(--ink);font-family:'Jost',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+  .setup-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,169,110,.3)}
+
+  /* ── TOOLTIP (onboarding) ── */
+  .tip-badge{display:inline-flex;align-items:center;gap:.4rem;font-size:.68rem;color:var(--ink-soft);background:var(--gold-dim);border:1px solid var(--gold-border);padding:.35rem .85rem;border-radius:20px;margin-bottom:1.4rem;cursor:default}
+  .tip-badge span{color:var(--gold);font-weight:600}
+
+  /* ── APP ── */
+  .app{display:none;min-height:100vh;flex-direction:column}
+  .app.visible{display:flex}
+
+  /* ── HEADER ── */
+  .header{background:var(--ink);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;border-bottom:1px solid rgba(200,169,110,.3);position:sticky;top:0;z-index:100}
+  .header-left{padding:1.3rem 0}
+  .logo{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold)}
+  .logo em{font-style:italic;color:#fff}
+  .agent-badge{display:flex;align-items:center;gap:.55rem;margin-top:.2rem}
+  .agent-dot{width:6px;height:6px;background:var(--green);border-radius:50%}
+  .agent-lbl{font-size:.61rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(245,240,232,.4);font-weight:300}
+  .header-right{display:flex;align-items:center;gap:.8rem}
+  .lead-counter{font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);background:rgba(200,169,110,.1);border:1px solid var(--gold-border);padding:.38rem .9rem;border-radius:20px}
+  .hdr-btn{padding:.45rem .9rem;background:none;border:1px solid rgba(200,169,110,.2);border-radius:6px;color:rgba(245,240,232,.45);font-family:'Jost',sans-serif;font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+  .hdr-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ── GOLD STRIP ── */
+  .gold-strip{background:var(--gold);padding:.4rem 2.5rem;font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink);font-weight:600;display:flex;justify-content:space-between}
+  .strip-right{opacity:.6}
+
+  /* ── NAV ── */
+  .nav-wrap{background:var(--white);border-bottom:1px solid var(--border);padding:0 2.5rem;display:flex;overflow-x:auto;box-shadow:var(--shadow-sm);scrollbar-width:none}
+  .nav-wrap::-webkit-scrollbar{display:none}
+  .nav-tab{padding:.95rem 1.15rem;background:none;border:none;border-bottom:3px solid transparent;color:var(--ink-soft);font-family:'Jost',sans-serif;font-size:.63rem;letter-spacing:.17em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .nav-tab.active{color:var(--ink);border-bottom-color:var(--gold)}
+  .nav-tab:hover:not(.active){color:var(--ink);border-bottom-color:var(--gold-dim)}
+  .nav-tab.new-badge::after{content:'NEW';font-size:.5rem;background:var(--rose);color:#fff;padding:.1rem .35rem;border-radius:4px;margin-left:.4rem;vertical-align:middle}
+
+  /* ── CONTENT ── */
+  .content{flex:1;max-width:1080px;width:100%;margin:0 auto;padding:2.5rem 2.5rem 5rem}
+  .panel{display:none;animation:fadeUp .28s ease}
+  .panel.active{display:block}
+
+  /* ── PANEL HEADER ── */
+  .panel-hd{margin-bottom:1.8rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+  .panel-title{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:400;color:var(--ink);line-height:1.15}
+  .panel-title em{font-style:italic;color:var(--rose)}
+  .panel-sub{font-size:.69rem;color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase;margin-top:.35rem}
+
+  /* ── CARDS ── */
+  .cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem}
+  .card{padding:1.25rem 1.4rem;background:var(--white);border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+  .card-icon{font-size:1.3rem;margin-bottom:.5rem}
+  .card-title{font-size:.77rem;font-weight:600;color:var(--ink);margin-bottom:.2rem}
+  .card-desc{font-size:.69rem;color:var(--ink-soft);line-height:1.55}
+
+  /* ── FORM ── */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.3rem}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.1rem;margin-bottom:1.3rem}
+  .full{grid-column:1/-1}
+  .fg{display:flex;flex-direction:column;gap:.4rem}
+  label{font-size:.61rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  input,select,textarea{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;color:var(--ink);font-family:'Jost',sans-serif;font-size:.88rem;transition:border-color .2s,box-shadow .2s;outline:none;width:100%}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,110,.1)}
+  textarea{resize:vertical;min-height:80px}
+
+  /* ── BUTTONS ── */
+  .btn{padding:.85rem 2.2rem;background:var(--ink);border:none;border-radius:6px;color:var(--gold);font-family:'Jost',sans-serif;font-size:.69rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .22s}
+  .btn:hover{background:var(--ink-mid);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .btn:disabled{opacity:.33;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-ghost{padding:.68rem 1.5rem;background:none;border:1px solid var(--border);border-radius:6px;color:var(--ink-soft);font-family:'Jost',sans-serif;font-size:.67rem;letter-spacing:.13em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:all .18s}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--ink);background:var(--gold-dim)}
+  .btn-wa{padding:.68rem 1.5rem;background:none;border:1px solid rgba(37,211,102,.3);border-radius:6px;color:var(--wa);font-family:'Jost',sans-serif;font-size:.67rem;letter-spacing:.13em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:all .18s}
+  .btn-wa:hover{background:rgba(37,211,102,.08);border-color:var(--wa)}
+  .btn-gold{padding:.85rem 2rem;background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:6px;color:var(--ink);font-family:'Jost',sans-serif;font-size:.69rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+  .btn-gold:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,169,110,.35)}
+
+  /* ── LOADING ── */
+  .loading{display:flex;align-items:center;gap:.7rem;color:var(--ink-soft);font-size:.73rem;letter-spacing:.1em;margin-top:1.4rem}
+  .dot{width:6px;height:6px;background:var(--gold);border-radius:50%;animation:pulse 1.2s ease-in-out infinite}
+  .dot:nth-child(2){animation-delay:.22s}
+  .dot:nth-child(3){animation-delay:.44s}
+
+  /* ── RESULT BOX ── */
+  .result-wrap{margin-top:1.8rem}
+  .result-box{padding:2rem;background:var(--white);border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--radius);line-height:1.85;font-size:.89rem;color:var(--ink);white-space:pre-wrap;box-shadow:var(--shadow-sm)}
+  .result-meta{display:flex;align-items:center;justify-content:space-between;margin-top:.6rem;flex-wrap:wrap;gap:.5rem}
+  .word-count{font-size:.63rem;color:var(--ink-xsoft);letter-spacing:.1em}
+  .copy-flash{font-size:.68rem;color:var(--green);font-weight:500;opacity:0;transition:opacity .3s}
+  .copy-flash.show{opacity:1}
+  .action-row{display:flex;gap:.55rem;margin-top:.9rem;flex-wrap:wrap}
+
+  /* ── AI FOLLOW-UP ── */
+  .followup-box{margin-top:1.2rem;padding:1.2rem 1.5rem;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:var(--radius);display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
+  .followup-box input{flex:1;min-width:200px;background:var(--white);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;font-size:.85rem;font-family:'Jost',sans-serif;outline:none}
+  .followup-box input:focus{border-color:var(--gold)}
+  .followup-label{font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-soft);font-weight:500;white-space:nowrap}
+
+  /* ── PILLS ── */
+  .pill-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem}
+  .pill{padding:.45rem 1.05rem;border-radius:20px;border:1px solid var(--border);background:var(--white);color:var(--ink-soft);font-size:.68rem;letter-spacing:.1em;font-family:'Jost',sans-serif;font-weight:500;cursor:pointer;transition:all .18s}
+  .pill.sel{background:var(--ink);border-color:var(--ink);color:var(--gold)}
+  .pill:hover:not(.sel){border-color:var(--gold);color:var(--ink)}
+
+  /* ── SAVED TEMPLATES ── */
+  .tpl-bar{display:flex;align-items:center;gap:.6rem;margin-bottom:1.3rem;flex-wrap:wrap}
+  .tpl-label{font-size:.61rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+  .tpl-chip{padding:.35rem .85rem;border-radius:20px;border:1px solid var(--border);background:var(--white);color:var(--ink-soft);font-size:.67rem;cursor:pointer;transition:all .18s;font-family:'Jost',sans-serif}
+  .tpl-chip:hover{border-color:var(--gold);color:var(--ink);background:var(--gold-dim)}
+  .tpl-chip.save-tpl{border-style:dashed;color:var(--ink-xsoft)}
+  .tpl-chip.save-tpl:hover{border-color:var(--green);color:var(--green);border-style:solid}
+
+  /* ── MORTGAGE CALC ── */
+  .calc-box{background:var(--ink);border-radius:12px;padding:2.2rem;margin-bottom:2rem;box-shadow:var(--shadow-lg)}
+  .calc-box label{color:rgba(245,240,232,.45)}
+  .calc-box input,.calc-box select{background:rgba(255,255,255,.07);border-color:rgba(200,169,110,.2);color:#f5f0e8}
+  .calc-box input:focus,.calc-box select:focus{border-color:var(--gold);background:rgba(255,255,255,.1);box-shadow:0 0 0 3px rgba(200,169,110,.15)}
+  .calc-box input::placeholder{color:rgba(245,240,232,.2)}
+  .calc-box select option{background:var(--ink-mid)}
+  .calc-result{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.8rem}
+  .calc-stat{text-align:center;padding:1.4rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(200,169,110,.18);border-radius:8px}
+  .calc-val{font-family:'Playfair Display',serif;font-size:1.65rem;color:var(--gold);line-height:1}
+  .calc-lbl{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(245,240,232,.35);margin-top:.5rem}
+  .calc-breakdown{margin-top:1.2rem;font-size:.75rem;color:rgba(245,240,232,.35);line-height:2;letter-spacing:.03em}
+
+  /* ── RENTAL YIELD CALC ── */
+  .yield-results{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1.5rem}
+  .yield-stat{text-align:center;padding:1.2rem .8rem;background:var(--white);border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+  .yield-val{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--ink);line-height:1}
+  .yield-val.good{color:var(--green)}
+  .yield-val.warn{color:#c47d30}
+  .yield-lbl{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-top:.4rem}
+
+  /* ── OFFER COMPARISON ── */
+  .offer-entry{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem;position:relative;box-shadow:var(--shadow-sm)}
+  .offer-entry-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  .offer-num{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .remove-offer{background:none;border:none;color:var(--ink-xsoft);font-size:1.1rem;cursor:pointer;padding:.2rem;line-height:1;transition:color .2s}
+  .remove-offer:hover{color:var(--rose)}
+  .add-offer-btn{width:100%;padding:.8rem;border:2px dashed var(--border);border-radius:var(--radius);background:none;color:var(--ink-soft);font-family:'Jost',sans-serif;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:1.4rem}
+  .add-offer-btn:hover{border-color:var(--gold);color:var(--ink)}
+
+  /* ── CLIENT REPORT ── */
+  .report-sections{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
+  .report-toggle{display:flex;align-items:center;gap:.7rem;padding:1rem 1.2rem;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s}
+  .report-toggle.active{border-color:var(--gold);background:var(--gold-dim)}
+  .report-toggle input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
+  .report-toggle-label{font-size:.75rem;font-weight:500;color:var(--ink)}
+  .report-toggle-desc{font-size:.67rem;color:var(--ink-soft);margin-top:.1rem}
+
+  /* ── LEADS ── */
+  .lead-form-box{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:2rem;max-width:600px;margin-bottom:2.5rem;box-shadow:var(--shadow-sm)}
+  .lf-title{font-family:'Playfair Display',serif;font-size:1.25rem;font-style:italic;color:var(--ink);margin-bottom:.25rem}
+  .lf-sub{font-size:.71rem;color:var(--ink-soft);margin-bottom:1.5rem}
+  .leads-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .leads-table th{text-align:left;padding:.6rem 1rem;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);border-bottom:2px solid var(--border);font-weight:600}
+  .leads-table td{padding:.82rem 1rem;border-bottom:1px solid var(--border);color:var(--ink)}
+  .leads-table tr:hover td{background:rgba(200,169,110,.04)}
+  .badge{display:inline-block;padding:.18rem .6rem;border-radius:20px;font-size:.61rem;letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+  .badge-buyer{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,143,106,.2)}
+  .badge-seller{background:var(--rose-dim);color:var(--rose);border:1px solid rgba(181,104,111,.2)}
+  .badge-investor{background:var(--gold-dim);color:#8a6930;border:1px solid var(--gold-border)}
+  .badge-renter{background:rgba(74,110,170,.1);color:#4a6eaa;border:1px solid rgba(74,110,170,.2)}
+  .empty-state{text-align:center;padding:4rem 1rem;color:var(--ink-xsoft)}
+  .empty-icon{font-size:2.2rem;margin-bottom:1rem;opacity:.3}
+  .success-msg{font-size:.75rem;color:var(--green);font-weight:500}
+
+  /* ── SETTINGS ── */
+  .settings-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:2rem;max-width:600px;box-shadow:var(--shadow-sm)}
+  .settings-section{font-size:.63rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:1.1rem;padding-bottom:.6rem;border-bottom:1px solid var(--gold-dim)}
+  .save-banner{display:none;background:var(--green-dim);border:1px solid rgba(74,143,106,.2);border-radius:6px;padding:.8rem 1.2rem;font-size:.75rem;color:var(--green);font-weight:500;margin-top:1rem}
+
+  /* ── FOOTER ── */
+  .footer{background:var(--ink);padding:1.1rem 2.5rem;display:flex;align-items:center;justify-content:space-between}
+  .footer-logo{font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold)}
+  .footer-logo em{font-style:italic;color:rgba(245,240,232,.5)}
+  .footer-copy{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(245,240,232,.22)}
+
+  /* ── DIVIDER ── */
+  .divider{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:2rem 0}
+
+  /* ── ANIMATIONS ── */
+  @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:720px){
+    .header,.gold-strip,.nav-wrap,.content,.footer{padding-left:1.2rem;padding-right:1.2rem}
+    .grid2,.grid3,.cards3,.calc-result,.yield-results,.report-sections,.sgrid{grid-template-columns:1fr}
+    .full{grid-column:1}
+    .panel-title{font-size:1.5rem}
+    .header-right .lead-counter{display:none}
+  }
+
+
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position: fixed; inset: 0;
+  background: #1a1714;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(200,169,110,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(200,169,110,0.04) 0%, transparent 50%);
+  animation: fadeIn .4s ease;
+}
+
+.login-box {
+  background: #221e18;
+  border: 1px solid rgba(200,169,110,0.25);
+  border-radius: 16px;
+  padding: 3.5rem;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: fadeUp .5s ease;
+}
+
+.login-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  color: #c8a96e;
+  margin-bottom: .3rem;
+}
+.login-logo em { font-style: italic; color: #fff; }
+
+.login-tag {
+  font-size: .61rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: rgba(200,169,110,.38);
+  margin-bottom: 2.8rem;
+}
+
+.login-divider {
+  width: 40px; height: 1px;
+  background: rgba(200,169,110,.3);
+  margin: 0 auto 2rem;
+}
+
+.login-welcome {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-style: italic;
+  color: #fff;
+  margin-bottom: .5rem;
+}
+
+.login-sub {
+  font-size: .73rem;
+  color: rgba(245,240,232,.33);
+  line-height: 1.65;
+  margin-bottom: 2.5rem;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #c8a96e, #e0c48a);
+  border: none;
+  border-radius: 8px;
+  color: #1a1714;
+  font-family: 'Jost', sans-serif;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 1.2rem;
+}
+.login-btn:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,169,110,.3); }
+
+.login-note {
+  font-size: .65rem;
+  color: rgba(245,240,232,.22);
+  line-height: 1.65;
+}
+
+.login-error {
+  display: none;
+  margin-bottom: 1rem;
+  padding: .7rem 1rem;
+  background: rgba(181,104,111,.12);
+  border: 1px solid rgba(181,104,111,.25);
+  border-radius: 6px;
+  font-size: .72rem;
+  color: #b5686f;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Esta<em>tiq</em></div>
+    <div class="login-tag">AI Property Intelligence Platform</div>
+    <div class="login-divider"></div>
+    <div class="login-welcome" id="login-title">Welcome back, Agent</div>
+    <div class="login-sub" id="login-subtitle">Enter your email and password to sign in. First time? Your first sign-in creates your account automatically.</div>
+    <div class="login-error" id="login-error" style="display:none"></div>
+    <div id="login-form">
+      <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.2rem">
+        <input type="email" id="auth-email" placeholder="Your email address" style="background:rgba(255,255,255,.07);border:1px solid rgba(200,169,110,.25);border-radius:6px;padding:.8rem 1rem;color:#f5f0e8;font-family:Jost,sans-serif;font-size:.9rem;outline:none;width:100%"/>
+        <input type="password" id="auth-password" placeholder="Password" style="background:rgba(255,255,255,.07);border:1px solid rgba(200,169,110,.25);border-radius:6px;padding:.8rem 1rem;color:#f5f0e8;font-family:Jost,sans-serif;font-size:.9rem;outline:none;width:100%"/>
+      </div>
+      <button class="login-btn" id="signin-btn" onclick="doLogin()">Sign In to Estatiq</button>
+      <div style="text-align:center;margin-top:.8rem">
+        <button onclick="showForgot()" style="background:none;border:none;color:rgba(200,169,110,.5);font-size:.68rem;cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.1em">Forgot password?</button>
+      </div>
+    </div>
+    <div id="forgot-form" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.2rem">
+        <input type="email" id="forgot-email" placeholder="Your email address" style="background:rgba(255,255,255,.07);border:1px solid rgba(200,169,110,.25);border-radius:6px;padding:.8rem 1rem;color:#f5f0e8;font-family:Jost,sans-serif;font-size:.9rem;outline:none;width:100%"/>
+      </div>
+      <button class="login-btn" onclick="doForgot()">Send Reset Email</button>
+      <div style="text-align:center;margin-top:.8rem">
+        <button onclick="showLogin()" style="background:none;border:none;color:rgba(200,169,110,.5);font-size:.68rem;cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.1em">Back to sign in</button>
+      </div>
+    </div>
+    <div id="set-password-form" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:.8rem;margin-bottom:1.2rem">
+        <input type="password" id="new-password" placeholder="Choose a new password" style="background:rgba(255,255,255,.07);border:1px solid rgba(200,169,110,.25);border-radius:6px;padding:.8rem 1rem;color:#f5f0e8;font-family:Jost,sans-serif;font-size:.9rem;outline:none;width:100%"/>
+        <input type="password" id="new-password2" placeholder="Confirm your password" style="background:rgba(255,255,255,.07);border:1px solid rgba(200,169,110,.25);border-radius:6px;padding:.8rem 1rem;color:#f5f0e8;font-family:Jost,sans-serif;font-size:.9rem;outline:none;width:100%"/>
+      </div>
+      <button class="login-btn" onclick="doSetPassword()">Set Password & Sign In</button>
+    </div>
+    <div class="login-note" style="margin-top:1.2rem">Don't have access? Contact your Estatiq administrator to request an invite.</div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP (hidden until logged in) ══ -->
+<div id="app-screen" style="display:none">
+
+
+<!-- ══ SETUP ══ -->
+<div class="setup-overlay" id="setup-overlay">
+  <div class="setup-box">
+    <div class="setup-logo">Esta<em>tiq</em></div>
+    <div class="setup-tag">AI-Powered Property Intelligence Platform</div>
+    <div class="setup-h">Welcome, Agent</div>
+    <div class="setup-sub">Set up your workspace in 30 seconds. Your details flow automatically into every listing, email, script and social post you generate.</div>
+    <div class="setup-fields">
+      <div class="sgrid">
+        <div class="sfg"><label>First Name *</label><input id="s-fn" placeholder="e.g. Sarah"/></div>
+        <div class="sfg"><label>Last Name *</label><input id="s-ln" placeholder="e.g. van Niekerk"/></div>
+      </div>
+      <div class="sfg"><label>Agency / Company *</label><input id="s-ag" placeholder="e.g. Premier Properties"/></div>
+      <div class="sgrid">
+        <div class="sfg"><label>Phone Number</label><input id="s-ph" placeholder="082 000 0000"/></div>
+        <div class="sfg"><label>Primary Region</label>
+          <select id="s-rg">
+            <option>South Africa</option><option>Gauteng</option><option>Western Cape</option>
+            <option>KwaZulu-Natal</option><option>Eastern Cape</option><option>Mpumalanga</option>
+            <option>Limpopo</option><option>Free State</option><option>North West</option><option>Northern Cape</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="setup-btn" onclick="launchApp()">Launch My Workspace →</button>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div class="app" id="main-app">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">Esta<em>tiq</em></div>
+      <div class="agent-badge"><div class="agent-dot"></div><div class="agent-lbl" id="hdr-agent">Loading…</div></div>
+    </div>
+    <div class="header-right">
+      <div class="lead-counter" id="lead-counter">0 Leads</div>
+      <button class="hdr-btn" onclick="setTab('settings',null)">⚙ Settings</button>
+      <button class="hdr-btn" onclick="signOut()" style="border-color:rgba(181,104,111,0.3);color:rgba(181,104,111,0.6)">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="gold-strip">
+    <span>AI Property Intelligence Platform</span>
+    <span class="strip-right" id="strip-agent"></span>
+  </div>
+
+  <div class="nav-wrap">
+    <button class="nav-tab active" onclick="setTab('listing',this)">Listing</button>
+    <button class="nav-tab" onclick="setTab('valuation',this)">Valuation</button>
+    <button class="nav-tab" onclick="setTab('market',this)">Market</button>
+    <button class="nav-tab" onclick="setTab('neighbourhood',this)">Neighbourhood</button>
+    <button class="nav-tab" onclick="setTab('mortgage',this)">Bond Calc</button>
+    <button class="nav-tab new-badge" onclick="setTab('rental',this)">Rental Yield</button>
+    <button class="nav-tab new-badge" onclick="setTab('offers',this)">Offer Compare</button>
+    <button class="nav-tab new-badge" onclick="setTab('report',this)">Client Report</button>
+    <button class="nav-tab" onclick="setTab('email',this)">Emails</button>
+    <button class="nav-tab" onclick="setTab('tour',this)">Virtual Tour</button>
+    <button class="nav-tab" onclick="setTab('social',this)">Social</button>
+    <button class="nav-tab" onclick="setTab('leads',this)">Leads</button>
+    <button class="nav-tab" id="settings-tab" onclick="setTab('settings',this)">⚙ Settings</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ LISTING ══ -->
+    <div id="panel-listing" class="panel active">
+      <div class="panel-hd">
+        <div><div class="panel-title">Property <em>Listing</em> Generator</div><div class="panel-sub">Compelling, conversion-ready copy in seconds</div></div>
+      </div>
+      <div class="tip-badge">💡 <span>Tip:</span> Fill in Location first — it's required to generate</div>
+      <div class="tpl-bar">
+        <span class="tpl-label">Quick Templates:</span>
+        <span class="tpl-chip" onclick="loadTemplate('listing','luxury')">Luxury Estate</span>
+        <span class="tpl-chip" onclick="loadTemplate('listing','family')">Family Home</span>
+        <span class="tpl-chip" onclick="loadTemplate('listing','investment')">Investment</span>
+        <span class="tpl-chip save-tpl" onclick="saveTemplate('listing')">+ Save Current</span>
+      </div>
+      <div class="cards3">
+        <div class="card"><div class="card-icon">✍️</div><div class="card-title">Pro Copy</div><div class="card-desc">Luxury-grade descriptions that sell</div></div>
+        <div class="card"><div class="card-icon">🎯</div><div class="card-title">Tone Control</div><div class="card-desc">Warm & friendly to high-end luxury</div></div>
+        <div class="card"><div class="card-icon">⚡</div><div class="card-title">Instant</div><div class="card-desc">Ready-to-post in seconds</div></div>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label>Property Type</label><select id="l-type"><option>Single Family Home</option><option>Condo / Apartment</option><option>Townhouse</option><option>Luxury Estate</option><option>Commercial</option><option>Land / Lot</option></select></div>
+        <div class="fg"><label>Tone</label><select id="l-tone"><option>Luxury</option><option>Friendly & Warm</option><option>Investment-Focused</option><option>Family-Oriented</option><option>Modern & Minimal</option></select></div>
+        <div class="fg"><label>Bedrooms</label><input id="l-bed" placeholder="e.g. 3"/></div>
+        <div class="fg"><label>Bathrooms</label><input id="l-bath" placeholder="e.g. 2"/></div>
+        <div class="fg"><label>Size (m²)</label><input id="l-sqft" placeholder="e.g. 220"/></div>
+        <div class="fg"><label>Asking Price (R)</label><input id="l-price" placeholder="e.g. 2,500,000"/></div>
+        <div class="fg full"><label>Location / Neighbourhood *</label><input id="l-location" placeholder="e.g. Sandton, Johannesburg — near Sandton City"/></div>
+        <div class="fg full"><label>Key Features</label><textarea id="l-features" placeholder="e.g. renovated kitchen, rooftop deck, pool, smart home, solar..."></textarea></div>
+      </div>
+      <button class="btn" id="btn-listing" onclick="gen('listing')">Generate Listing</button>
+      <div class="loading" id="load-listing" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Crafting your listing…</span></div>
+      <div id="result-listing" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-listing-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-listing"></div><span class="copy-flash" id="cf-listing">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('listing')">Copy Text</button>
+          <button class="btn-wa" onclick="copyWA('listing')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Property Listing','listing')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-listing" placeholder="e.g. Make it shorter · Change tone to family · Add more about the garden"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('listing')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VALUATION ══ -->
+    <div id="panel-valuation" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Property <em>Valuation</em> Estimator</div><div class="panel-sub">AI-driven market value estimate with rationale</div></div></div>
+      <div class="tip-badge">💡 <span>Tip:</span> Add comparable sales for a more accurate estimate</div>
+      <div class="grid2">
+        <div class="fg"><label>Property Type</label><select id="v-type"><option>Single Family Home</option><option>Condo / Apartment</option><option>Townhouse</option><option>Luxury Estate</option><option>Commercial</option><option>Land / Lot</option></select></div>
+        <div class="fg"><label>Condition</label><select id="v-condition"><option>Excellent / Newly Renovated</option><option>Good / Well Maintained</option><option>Average</option><option>Needs Work</option><option>Fixer Upper</option></select></div>
+        <div class="fg"><label>Bedrooms</label><input id="v-bed" placeholder="3"/></div>
+        <div class="fg"><label>Bathrooms</label><input id="v-bath" placeholder="2"/></div>
+        <div class="fg"><label>Size (m²)</label><input id="v-sqft" placeholder="220"/></div>
+        <div class="fg"><label>Year Built</label><input id="v-year" placeholder="2005"/></div>
+        <div class="fg full"><label>Location / Suburb *</label><input id="v-location" placeholder="e.g. Bryanston, Johannesburg"/></div>
+        <div class="fg full"><label>Notable Features</label><textarea id="v-features" placeholder="e.g. pool, double garage, solar panels, security estate..."></textarea></div>
+        <div class="fg full"><label>Recent Comparable Sales (optional)</label><textarea id="v-comps" placeholder="e.g. similar 3BR sold for R2.8M last month nearby..."></textarea></div>
+      </div>
+      <button class="btn" id="btn-valuation" onclick="gen('valuation')">Estimate Value</button>
+      <div class="loading" id="load-valuation" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Calculating estimate…</span></div>
+      <div id="result-valuation" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-valuation-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-valuation"></div><span class="copy-flash" id="cf-valuation">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('valuation')">Copy Report</button>
+          <button class="btn-wa" onclick="copyWA('valuation')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Property Valuation','valuation')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-valuation" placeholder="e.g. What if condition was excellent? · Adjust for a pool · Simplify the report"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('valuation')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MARKET ══ -->
+    <div id="panel-market" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Market <em>Trend</em> Analyzer</div><div class="panel-sub">Sharp AI insights on any property market</div></div></div>
+      <div class="tip-badge">💡 <span>Tip:</span> Add local context like new developments or rate changes for richer insights</div>
+      <div class="grid2">
+        <div class="fg full"><label>City / Area *</label><input id="m-area" placeholder="e.g. Cape Town, Western Cape"/></div>
+        <div class="fg"><label>Property Type</label><select id="m-proptype"><option>Residential</option><option>Luxury</option><option>Commercial</option><option>Multi-Family</option><option>Vacation / STR</option></select></div>
+        <div class="fg"><label>Market Condition</label><select id="m-condition"><option>Seller's Market</option><option>Buyer's Market</option><option>Balanced</option><option>Uncertain / Mixed</option></select></div>
+        <div class="fg full"><label>Price Range</label><input id="m-price" placeholder="e.g. R2M–R5M"/></div>
+        <div class="fg full"><label>Additional Context</label><textarea id="m-notes" placeholder="e.g. new infrastructure planned, investor activity, recent rate cuts..."></textarea></div>
+      </div>
+      <button class="btn" id="btn-market" onclick="gen('market')">Analyze Market</button>
+      <div class="loading" id="load-market" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Analyzing market…</span></div>
+      <div id="result-market" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-market-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-market"></div><span class="copy-flash" id="cf-market">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('market')">Copy Analysis</button>
+          <button class="btn-wa" onclick="copyWA('market')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Market Analysis','market')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-market" placeholder="e.g. Focus more on investment · What about first-time buyers? · Summarize in 3 bullet points"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('market')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NEIGHBOURHOOD ══ -->
+    <div id="panel-neighbourhood" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Neighbourhood <em>Comparison</em></div><div class="panel-sub">Side-by-side lifestyle & investment analysis</div></div></div>
+      <div class="grid2">
+        <div class="fg"><label>Neighbourhood A *</label><input id="n-a" placeholder="e.g. Sandton, Johannesburg"/></div>
+        <div class="fg"><label>Neighbourhood B *</label><input id="n-b" placeholder="e.g. Rosebank, Johannesburg"/></div>
+        <div class="fg"><label>Buyer Profile</label><select id="n-profile"><option>Young Professional</option><option>Family with Kids</option><option>Retiree</option><option>Property Investor</option><option>First-Time Buyer</option></select></div>
+        <div class="fg"><label>Primary Focus</label><select id="n-focus"><option>Overall Lifestyle</option><option>Investment Returns</option><option>School Catchment</option><option>Safety & Security</option><option>Commute & Transport</option></select></div>
+        <div class="fg full"><label>Budget Range (R)</label><input id="n-budget" placeholder="e.g. R1.5M–R3M"/></div>
+      </div>
+      <button class="btn" id="btn-neighbourhood" onclick="gen('neighbourhood')">Compare Neighbourhoods</button>
+      <div class="loading" id="load-neighbourhood" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Comparing areas…</span></div>
+      <div id="result-neighbourhood" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-neighbourhood-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-neighbourhood"></div><span class="copy-flash" id="cf-neighbourhood">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('neighbourhood')">Copy Report</button>
+          <button class="btn-wa" onclick="copyWA('neighbourhood')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Neighbourhood Comparison','neighbourhood')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-neighbourhood" placeholder="e.g. Which is better for rental? · Add crime stats context · Make it shorter"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('neighbourhood')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MORTGAGE ══ -->
+    <div id="panel-mortgage" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Bond <em>Calculator</em></div><div class="panel-sub">Instant SA home loan repayment estimates</div></div></div>
+      <div class="calc-box">
+        <div class="grid3">
+          <div class="fg"><label>Property Price (R)</label><input id="mo-price" type="number" placeholder="2500000" oninput="calcMortgage()"/></div>
+          <div class="fg"><label>Deposit (R)</label><input id="mo-deposit" type="number" placeholder="500000" oninput="calcMortgage()"/></div>
+          <div class="fg"><label>Interest Rate (%)</label><input id="mo-rate" type="number" placeholder="11.75" step="0.25" value="11.75" oninput="calcMortgage()"/></div>
+          <div class="fg"><label>Loan Term</label><select id="mo-term" onchange="calcMortgage()"><option value="30">30 Years</option><option value="25">25 Years</option><option value="20" selected>20 Years</option><option value="15">15 Years</option><option value="10">10 Years</option></select></div>
+          <div class="fg"><label>Transfer Duty</label><select id="mo-transfer" onchange="calcMortgage()"><option value="yes">Include</option><option value="no">Exclude</option></select></div>
+          <div class="fg"><label>Bond Initiation Fee (R)</label><input id="mo-initiation" type="number" value="6037" oninput="calcMortgage()"/></div>
+        </div>
+        <div class="calc-result" id="calc-result" style="display:none">
+          <div class="calc-stat"><div class="calc-val" id="mo-monthly"></div><div class="calc-lbl">Monthly Repayment</div></div>
+          <div class="calc-stat"><div class="calc-val" id="mo-total"></div><div class="calc-lbl">Total Repaid</div></div>
+          <div class="calc-stat"><div class="calc-val" id="mo-interest"></div><div class="calc-lbl">Total Interest</div></div>
+        </div>
+        <div id="mo-breakdown" class="calc-breakdown" style="display:none"></div>
+      </div>
+      <div class="panel-sub" style="margin-bottom:1rem">Ask the AI advisor to explain these numbers or run scenarios</div>
+      <div class="fg" style="max-width:520px;margin-bottom:1.2rem"><label>Your Question</label><input id="mo-question" placeholder="e.g. Can I afford this? What if rates drop to 10%? Extra R2000/month?"/></div>
+      <button class="btn" id="btn-mortgage-ai" onclick="gen('mortgage')">Ask AI Advisor</button>
+      <div class="loading" id="load-mortgage" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Running scenarios…</span></div>
+      <div id="result-mortgage" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-mortgage-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-mortgage"></div><span class="copy-flash" id="cf-mortgage">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('mortgage')">Copy Advice</button>
+          <button class="btn-wa" onclick="copyWA('mortgage')">📱 WhatsApp</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-mortgage" placeholder="e.g. What if I pay R3000 extra monthly? · Explain in simpler terms"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('mortgage')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RENTAL YIELD ══ -->
+    <div id="panel-rental" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Rental <em>Yield</em> Calculator</div><div class="panel-sub">Instantly calculate gross & net yields plus ROI for investors</div></div></div>
+      <div class="tip-badge">💡 <span>Tip:</span> A gross yield above 8% is generally considered strong in SA</div>
+      <div class="grid2">
+        <div class="fg"><label>Purchase Price (R) *</label><input id="ry-price" type="number" placeholder="2000000" oninput="calcRental()"/></div>
+        <div class="fg"><label>Monthly Rental Income (R) *</label><input id="ry-rent" type="number" placeholder="15000" oninput="calcRental()"/></div>
+        <div class="fg"><label>Monthly Levies / HOA (R)</label><input id="ry-levy" type="number" placeholder="1500" oninput="calcRental()"/></div>
+        <div class="fg"><label>Monthly Rates & Taxes (R)</label><input id="ry-rates" type="number" placeholder="800" oninput="calcRental()"/></div>
+        <div class="fg"><label>Monthly Maintenance Est. (R)</label><input id="ry-maint" type="number" placeholder="600" oninput="calcRental()"/></div>
+        <div class="fg"><label>Vacancy Rate (%)</label><input id="ry-vacancy" type="number" placeholder="8" value="8" oninput="calcRental()"/></div>
+        <div class="fg"><label>Bond Monthly Payment (R)</label><input id="ry-bond" type="number" placeholder="0" oninput="calcRental()"/></div>
+        <div class="fg"><label>Deposit Paid (R)</label><input id="ry-deposit" type="number" placeholder="0" oninput="calcRental()"/></div>
+      </div>
+      <div id="yield-results" style="display:none">
+        <div class="yield-results">
+          <div class="yield-stat"><div class="yield-val" id="yr-gross">—</div><div class="yield-lbl">Gross Yield</div></div>
+          <div class="yield-stat"><div class="yield-val" id="yr-net">—</div><div class="yield-lbl">Net Yield</div></div>
+          <div class="yield-stat"><div class="yield-val" id="yr-monthly">—</div><div class="yield-lbl">Net Monthly Cash</div></div>
+          <div class="yield-stat"><div class="yield-val" id="yr-roi">—</div><div class="yield-lbl">Cash-on-Cash ROI</div></div>
+        </div>
+        <div id="yield-verdict" style="margin-top:1rem;font-size:.82rem;color:var(--ink-soft);padding:1rem 1.4rem;background:var(--white);border:1px solid var(--border);border-radius:var(--radius)"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="panel-sub" style="margin-bottom:1rem">Get AI to write an investor pitch based on these numbers</div>
+      <button class="btn" id="btn-rental" onclick="gen('rental')">Generate Investor Summary</button>
+      <div class="loading" id="load-rental" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Writing investor summary…</span></div>
+      <div id="result-rental" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-rental-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-rental"></div><span class="copy-flash" id="cf-rental">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('rental')">Copy Summary</button>
+          <button class="btn-wa" onclick="copyWA('rental')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Rental Investment Summary','rental')">Export PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ OFFER COMPARISON ══ -->
+    <div id="panel-offers" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Offer <em>Comparison</em></div><div class="panel-sub">Paste in multiple offers — AI ranks, compares & recommends</div></div></div>
+      <div class="tip-badge">💡 <span>Tip:</span> Include all conditions, not just the price — suspensive conditions matter</div>
+      <div class="fg" style="margin-bottom:1.3rem"><label>Property Being Sold</label><input id="of-property" placeholder="e.g. 3BR house in Fourways, listed at R2.8M"/></div>
+      <div id="offers-container">
+        <div class="offer-entry" id="offer-0">
+          <div class="offer-entry-hd"><span class="offer-num">Offer 1</span></div>
+          <div class="grid2">
+            <div class="fg"><label>Buyer Name / Reference</label><input class="of-buyer" placeholder="e.g. Buyer A / The Dlaminis"/></div>
+            <div class="fg"><label>Offer Price (R)</label><input class="of-price" type="number" placeholder="2750000"/></div>
+            <div class="fg full"><label>Conditions & Details</label><textarea class="of-details" placeholder="e.g. Subject to bond approval, 30-day occupation, no furniture · OR: Cash offer, immediate transfer, no conditions"></textarea></div>
+          </div>
+        </div>
+        <div class="offer-entry" id="offer-1">
+          <div class="offer-entry-hd"><span class="offer-num">Offer 2</span><button class="remove-offer" onclick="removeOffer(1)">✕</button></div>
+          <div class="grid2">
+            <div class="fg"><label>Buyer Name / Reference</label><input class="of-buyer" placeholder="e.g. Buyer B"/></div>
+            <div class="fg"><label>Offer Price (R)</label><input class="of-price" type="number" placeholder="2700000"/></div>
+            <div class="fg full"><label>Conditions & Details</label><textarea class="of-details" placeholder="e.g. Bond approved, 60-day occupation, requesting curtains & appliances"></textarea></div>
+          </div>
+        </div>
+      </div>
+      <button class="add-offer-btn" onclick="addOffer()">+ Add Another Offer</button>
+      <button class="btn" id="btn-offers" onclick="gen('offers')">Compare & Rank Offers</button>
+      <div class="loading" id="load-offers" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Analyzing offers…</span></div>
+      <div id="result-offers" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-offers-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-offers"></div><span class="copy-flash" id="cf-offers">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('offers')">Copy Analysis</button>
+          <button class="btn-wa" onclick="copyWA('offers')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Offer Comparison','offers')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-offers" placeholder="e.g. Which offer is safer legally? · Explain the risk of the bond condition · Make it shorter"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('offers')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CLIENT REPORT ══ -->
+    <div id="panel-report" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Client <em>Report</em> Builder</div><div class="panel-sub">Combine multiple analyses into one branded PDF for your client</div></div></div>
+      <div class="tip-badge">💡 <span>Tip:</span> Generate the individual tools first, then combine them here into one polished report</div>
+      <div class="fg" style="margin-bottom:1.4rem;max-width:500px"><label>Client Name</label><input id="rpt-client" placeholder="e.g. Mr & Mrs Dlamini"/></div>
+      <div class="fg" style="margin-bottom:1.4rem;max-width:500px"><label>Property Address / Reference</label><input id="rpt-property" placeholder="e.g. 14 Acacia Ave, Bryanston, Johannesburg"/></div>
+      <label style="display:block;margin-bottom:.9rem">Select Sections to Include</label>
+      <div class="report-sections">
+        <label class="report-toggle" id="rpt-tog-listing"><input type="checkbox" id="rpt-listing" checked onchange="toggleReportSection('listing')"> <div><div class="report-toggle-label">📝 Property Listing</div><div class="report-toggle-desc">The generated listing description</div></div></label>
+        <label class="report-toggle" id="rpt-tog-valuation"><input type="checkbox" id="rpt-valuation" checked onchange="toggleReportSection('valuation')"> <div><div class="report-toggle-label">💰 Valuation Estimate</div><div class="report-toggle-desc">Price range & value analysis</div></div></label>
+        <label class="report-toggle" id="rpt-tog-market"><input type="checkbox" id="rpt-market" onchange="toggleReportSection('market')"> <div><div class="report-toggle-label">📊 Market Analysis</div><div class="report-toggle-desc">Area trends & investment outlook</div></div></label>
+        <label class="report-toggle" id="rpt-tog-neighbourhood"><input type="checkbox" id="rpt-neighbourhood" onchange="toggleReportSection('neighbourhood')"> <div><div class="report-toggle-label">🏘️ Neighbourhood Comparison</div><div class="report-toggle-desc">Area lifestyle & investment comparison</div></div></label>
+        <label class="report-toggle" id="rpt-tog-rental"><input type="checkbox" id="rpt-rental" onchange="toggleReportSection('rental')"> <div><div class="report-toggle-label">📈 Rental Yield Summary</div><div class="report-toggle-desc">Investment returns & cash flow</div></div></label>
+        <label class="report-toggle" id="rpt-tog-mortgage"><input type="checkbox" id="rpt-mortgage" onchange="toggleReportSection('mortgage')"> <div><div class="report-toggle-label">🏦 Bond Advice</div><div class="report-toggle-desc">Mortgage scenarios & guidance</div></div></label>
+      </div>
+      <div class="fg" style="margin-bottom:1.4rem;max-width:500px"><label>Intro Message (optional)</label><textarea id="rpt-intro" placeholder="e.g. Dear Mr & Mrs Dlamini, please find your personalised property report prepared by [your name]..." style="min-height:80px"></textarea></div>
+      <button class="btn-gold" onclick="buildClientReport()">Build & Export Client Report</button>
+      <p id="rpt-warning" style="display:none;margin-top:1rem;font-size:.78rem;color:var(--rose)">⚠ Please generate at least one tool output first, then select it above.</p>
+    </div>
+
+    <!-- ══ EMAIL ══ -->
+    <div id="panel-email" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Email <em>Generator</em></div><div class="panel-sub">Professional emails signed as you, for every situation</div></div></div>
+      <div style="margin-bottom:1.2rem">
+        <label style="display:block;margin-bottom:.8rem">Email Type</label>
+        <div class="pill-row" id="email-pills">
+          <button class="pill sel" onclick="selPill('email-pills',this,'Follow-Up')">Follow-Up</button>
+          <button class="pill" onclick="selPill('email-pills',this,'Offer Letter')">Offer Letter</button>
+          <button class="pill" onclick="selPill('email-pills',this,'Welcome / Intro')">Welcome</button>
+          <button class="pill" onclick="selPill('email-pills',this,'Open House Invite')">Open House</button>
+          <button class="pill" onclick="selPill('email-pills',this,'Price Reduction')">Price Reduction</button>
+          <button class="pill" onclick="selPill('email-pills',this,'Thank You')">Thank You</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label>Client Name *</label><input id="e-client" placeholder="e.g. Mr & Mrs Dlamini"/></div>
+        <div class="fg"><label>Agent Name</label><input id="e-agent" placeholder="Auto-filled from settings"/></div>
+        <div class="fg full"><label>Property / Context</label><input id="e-property" placeholder="e.g. 3BR home in Fourways viewed on Saturday"/></div>
+        <div class="fg full"><label>Key Points to Include</label><textarea id="e-notes" placeholder="e.g. they loved the garden, offer deadline is Friday..."></textarea></div>
+        <div class="fg"><label>Tone</label><select id="e-tone"><option>Professional & Warm</option><option>Formal</option><option>Friendly & Casual</option><option>Urgent</option></select></div>
+      </div>
+      <button class="btn" id="btn-email" onclick="gen('email')">Generate Email</button>
+      <div class="loading" id="load-email" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Writing your email…</span></div>
+      <div id="result-email" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-email-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-email"></div><span class="copy-flash" id="cf-email">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('email')">Copy Email</button>
+          <button class="btn-wa" onclick="copyWA('email')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Email Template','email')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-email" placeholder="e.g. Make it more urgent · Shorter · Add a PS about the open house"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('email')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIRTUAL TOUR ══ -->
+    <div id="panel-tour" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Virtual Tour <em>Script</em></div><div class="panel-sub">Room-by-room video walkthrough narration</div></div></div>
+      <div class="grid2">
+        <div class="fg"><label>Property Type</label><select id="t-type"><option>Single Family Home</option><option>Condo / Apartment</option><option>Townhouse</option><option>Luxury Estate</option></select></div>
+        <div class="fg"><label>Style</label><select id="t-style"><option>Luxury & Sophisticated</option><option>Warm & Family-Friendly</option><option>Modern & Minimalist</option><option>Energetic & Youthful</option></select></div>
+        <div class="fg"><label>Bedrooms</label><input id="t-bed" placeholder="4"/></div>
+        <div class="fg"><label>Bathrooms</label><input id="t-bath" placeholder="3"/></div>
+        <div class="fg full"><label>Location & Setting *</label><input id="t-location" placeholder="e.g. Constantia, Cape Town — mountain views, wine estate nearby"/></div>
+        <div class="fg full"><label>Room-by-Room Highlights</label><textarea id="t-rooms" placeholder="e.g. Entrance: double-volume ceiling / Lounge: fireplace & stacking doors / Kitchen: Caesarstone island..."></textarea></div>
+        <div class="fg full"><label>Unique Selling Points</label><textarea id="t-usp" placeholder="e.g. solar & battery backup, borehole, heated pool, staff quarters..."></textarea></div>
+      </div>
+      <button class="btn" id="btn-tour" onclick="gen('tour')">Generate Script</button>
+      <div class="loading" id="load-tour" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Writing your script…</span></div>
+      <div id="result-tour" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-tour-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-tour"></div><span class="copy-flash" id="cf-tour">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('tour')">Copy Script</button>
+          <button class="btn-ghost" onclick="exportPDF('Virtual Tour Script','tour')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-tour" placeholder="e.g. Make the opening more dramatic · Shorter script · Focus more on the kitchen"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('tour')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SOCIAL ══ -->
+    <div id="panel-social" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Social <em>Media</em> Posts</div><div class="panel-sub">Platform-optimized posts with hashtags & CTAs</div></div></div>
+      <div class="tip-badge">💡 <span>Tip:</span> Select multiple platforms to get tailored posts for each in one click</div>
+      <div style="margin-bottom:1.2rem">
+        <label style="display:block;margin-bottom:.8rem">Select Platforms</label>
+        <div class="pill-row" id="platform-pills">
+          <button class="pill sel" onclick="togglePlatform(this,'Instagram')">Instagram</button>
+          <button class="pill" onclick="togglePlatform(this,'Facebook')">Facebook</button>
+          <button class="pill" onclick="togglePlatform(this,'LinkedIn')">LinkedIn</button>
+          <button class="pill" onclick="togglePlatform(this,'Twitter / X')">Twitter / X</button>
+          <button class="pill" onclick="togglePlatform(this,'TikTok')">TikTok</button>
+          <button class="pill" onclick="togglePlatform(this,'WhatsApp Status')">WhatsApp Status</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="fg full"><label>Property Summary *</label><input id="s-property" placeholder="e.g. 3BR modern condo in Umhlanga, R2.5M"/></div>
+        <div class="fg full"><label>Key Highlights</label><textarea id="s-highlights" placeholder="e.g. ocean views, renovated kitchen, resort pool, pet-friendly..."></textarea></div>
+        <div class="fg full"><label>Call to Action</label><input id="s-cta" placeholder="e.g. DM for a private tour / link in bio / call me directly"/></div>
+      </div>
+      <button class="btn" id="btn-social" onclick="gen('social')">Generate Posts</button>
+      <div class="loading" id="load-social" style="display:none"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Writing your posts…</span></div>
+      <div id="result-social" class="result-wrap" style="display:none">
+        <div class="result-box" id="result-social-text"></div>
+        <div class="result-meta"><div class="word-count" id="wc-social"></div><span class="copy-flash" id="cf-social">✓ Copied!</span></div>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="copyResult('social')">Copy All Posts</button>
+          <button class="btn-wa" onclick="copyWA('social')">📱 WhatsApp</button>
+          <button class="btn-ghost" onclick="exportPDF('Social Media Posts','social')">Export PDF</button>
+        </div>
+        <div class="followup-box">
+          <span class="followup-label">✦ Refine:</span>
+          <input id="fu-social" placeholder="e.g. Add more emojis · Make Instagram more luxurious · Shorter LinkedIn post"/>
+          <button class="btn-ghost" style="white-space:nowrap" onclick="followUp('social')">Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LEADS ══ -->
+    <div id="panel-leads" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Lead <em>Pipeline</em></div><div class="panel-sub">Capture and manage your property prospects</div></div></div>
+      <div class="lead-form-box">
+        <div class="lf-title">Add New Lead</div>
+        <div class="lf-sub">Log a buyer, seller, investor or renter to your pipeline</div>
+        <div class="grid2">
+          <div class="fg"><label>Full Name *</label><input id="lead-name" placeholder="Jane Smith"/></div>
+          <div class="fg"><label>Lead Type</label><select id="lead-type"><option>Buyer</option><option>Seller</option><option>Investor</option><option>Renter</option></select></div>
+          <div class="fg"><label>Email *</label><input id="lead-email" placeholder="jane@email.com"/></div>
+          <div class="fg"><label>Phone</label><input id="lead-phone" placeholder="+27 82 000 0000"/></div>
+          <div class="fg full"><label>Budget / Price Range</label><input id="lead-budget" placeholder="e.g. R1.5M–R3M"/></div>
+          <div class="fg full"><label>Notes / Requirements</label><textarea id="lead-message" placeholder="e.g. 3BR near good schools, needs parking, wants a pool..."></textarea></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap">
+          <button class="btn" onclick="saveLead()">Save Lead</button>
+          <span class="success-msg" id="lead-saved" style="display:none">✓ Lead saved!</span>
+        </div>
+      </div>
+      <div id="leads-empty" class="empty-state"><div class="empty-icon">📋</div><div>No leads yet — add your first one above</div></div>
+      <div id="leads-table-wrap" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem">
+          <div id="leads-count-label" style="font-size:.67rem;color:var(--ink-soft);letter-spacing:.18em;text-transform:uppercase;font-weight:500"></div>
+          <div style="display:flex;gap:.6rem">
+            <button class="btn-ghost" style="padding:.4rem 1rem;font-size:.66rem" onclick="exportCSV()">Export CSV</button>
+          </div>
+        </div>
+        <table class="leads-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Type</th><th>Budget</th><th>Date</th></tr></thead>
+          <tbody id="leads-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div id="panel-settings" class="panel">
+      <div class="panel-hd"><div><div class="panel-title">Agent <em>Settings</em></div><div class="panel-sub">Your details flow into every AI-generated output</div></div></div>
+      <div class="settings-card">
+        <div class="settings-section">Agent Profile</div>
+        <div class="grid2" style="margin-bottom:1rem">
+          <div class="fg"><label>First Name</label><input id="set-fn" placeholder="Sarah"/></div>
+          <div class="fg"><label>Last Name</label><input id="set-ln" placeholder="van Niekerk"/></div>
+        </div>
+        <div class="grid2" style="margin-bottom:1rem">
+          <div class="fg"><label>Agency / Company</label><input id="set-ag" placeholder="Premier Properties"/></div>
+          <div class="fg"><label>Phone Number</label><input id="set-ph" placeholder="082 000 0000"/></div>
+        </div>
+        <div class="fg" style="margin-bottom:1.8rem">
+          <label>Primary Region</label>
+          <select id="set-rg">
+            <option>South Africa</option><option>Gauteng</option><option>Western Cape</option>
+            <option>KwaZulu-Natal</option><option>Eastern Cape</option><option>Mpumalanga</option>
+            <option>Limpopo</option><option>Free State</option><option>North West</option><option>Northern Cape</option>
+          </select>
+        </div>
+        <button class="btn" onclick="saveSettings()">Save Settings</button>
+        <div class="save-banner" id="save-banner">✓ Settings saved — all outputs will now reflect your updated details.</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <div class="footer">
+    <div class="footer-logo">Esta<em>tiq</em></div>
+    <div class="footer-copy">AI Property Intelligence Platform</div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+const API_URL = "/.netlify/functions/claude";
+
+
+let agent = { firstname:'', lastname:'', agency:'', phone:'', region:'South Africa' };
+let leads = [];
+let selectedPlatforms = ["Instagram"];
+let selectedEmailType = "Follow-Up";
+let results = {};
+let offerCount = 2;
+
+const savedTemplates = {
+  listing: {
+    luxury: { type:'Luxury Estate', tone:'Luxury', bed:'5', bath:'4', sqft:'650', price:'8,500,000', features:'heated pool, wine cellar, home cinema, smart home, 4-car garage, staff quarters, borehole, solar' },
+    family: { type:'Single Family Home', tone:'Family-Oriented', bed:'3', bath:'2', sqft:'220', price:'2,200,000', features:'double garage, garden, renovated kitchen, alarm, close to schools' },
+    investment: { type:'Condo / Apartment', tone:'Investment-Focused', bed:'2', bath:'1', sqft:'85', price:'1,100,000', features:'secure building, managed complex, fibre, backup power, high rental demand area' }
+  }
+};
+
+/* ── LAUNCH ── */
+function launchApp() {
+  const fn = document.getElementById('s-fn').value.trim();
+  const ln = document.getElementById('s-ln').value.trim();
+  const ag = document.getElementById('s-ag').value.trim();
+  if (!fn || !ln || !ag) { alert('Please fill in your name and agency to continue.'); return; }
+  agent = { firstname:fn, lastname:ln, agency:ag, phone:document.getElementById('s-ph').value.trim(), region:document.getElementById('s-rg').value };
+  applyAgent();
+  document.getElementById('setup-overlay').style.display = 'none';
+  document.getElementById('main-app').classList.add('visible');
+}
+
+function agentFull() { return `${agent.firstname} ${agent.lastname}`; }
+function agentCtx() { return `Agent: ${agentFull()} at ${agent.agency}${agent.phone?', phone: '+agent.phone:''}. Region: ${agent.region}.`; }
+
+function applyAgent() {
+  document.getElementById('hdr-agent').textContent = `${agentFull()} · ${agent.agency}`;
+  document.getElementById('strip-agent').textContent = `${agent.agency} · ${agent.region}`;
+  document.getElementById('e-agent').value = agentFull();
+}
+
+/* ── SETTINGS ── */
+function saveSettings() {
+  agent.firstname = document.getElementById('set-fn').value.trim() || agent.firstname;
+  agent.lastname  = document.getElementById('set-ln').value.trim()  || agent.lastname;
+  agent.agency    = document.getElementById('set-ag').value.trim()    || agent.agency;
+  agent.phone     = document.getElementById('set-ph').value.trim();
+  agent.region    = document.getElementById('set-rg').value;
+  applyAgent();
+  const b = document.getElementById('save-banner');
+  b.style.display = 'block';
+  setTimeout(()=>b.style.display='none', 3500);
+}
+
+/* ── NAV ── */
+function setTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else { const t = document.getElementById('settings-tab'); if(t) t.classList.add('active'); }
+  if (name==='mortgage') calcMortgage();
+  if (name==='settings') { document.getElementById('set-fn').value=agent.firstname; document.getElementById('set-ln').value=agent.lastname; document.getElementById('set-ag').value=agent.agency; document.getElementById('set-ph').value=agent.phone; document.getElementById('set-rg').value=agent.region; }
+}
+
+/* ── PILLS ── */
+function selPill(groupId, btn, val) {
+  document.querySelectorAll(`#${groupId} .pill`).forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  if (groupId==='email-pills') selectedEmailType = val;
+}
+
+function togglePlatform(btn, name) {
+  if (selectedPlatforms.includes(name)) {
+    if (selectedPlatforms.length===1) return;
+    selectedPlatforms = selectedPlatforms.filter(p=>p!==name);
+    btn.classList.remove('sel');
+  } else { selectedPlatforms.push(name); btn.classList.add('sel'); }
+}
+
+/* ── TEMPLATES ── */
+function loadTemplate(tool, key) {
+  const t = savedTemplates[tool]?.[key]; if (!t) return;
+  if (tool==='listing') {
+    document.getElementById('l-type').value = t.type;
+    document.getElementById('l-tone').value = t.tone;
+    document.getElementById('l-bed').value  = t.bed;
+    document.getElementById('l-bath').value = t.bath;
+    document.getElementById('l-sqft').value = t.sqft;
+    document.getElementById('l-price').value= t.price;
+    document.getElementById('l-features').value = t.features;
+  }
+}
+function saveTemplate(tool) { alert('Template saved! (In a real deployment, this saves to your profile)'); }
+
+/* ── AI CORE ── */
+async function callClaude(prompt) {
+  try {
+    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ messages:[{role:'user',content:prompt}] }) });
+    const data = await res.json();
+    return data.content?.[0]?.text || 'Something went wrong — please try again.';
+  } catch(e) { return 'Connection error — please try again.'; }
+}
+
+function setLoading(key, on) {
+  document.getElementById('load-'+key).style.display = on?'flex':'none';
+  const btn = document.getElementById('btn-'+key);
+  if (btn) btn.disabled = on;
+}
+
+function setResult(key, text) {
+  results[key] = text;
+  document.getElementById('result-'+key+'-text').textContent = text;
+  document.getElementById('result-'+key).style.display = 'block';
+  const wc = document.getElementById('wc-'+key);
+  if (wc) { const words = text.trim().split(/\s+/).length; wc.textContent = `${words} words · ${text.length} chars`; }
+}
+
+/* ── AI GENERATORS ── */
+async function gen(key) {
+  setLoading(key, true);
+  document.getElementById('result-'+key).style.display = 'none';
+  let prompt = '';
+
+  if (key==='listing') {
+    if (!document.getElementById('l-location').value) { setLoading(key,false); return; }
+    prompt = `You are a luxury real estate copywriter. ${agentCtx()} Write a compelling property listing.\nProperty: ${document.getElementById('l-type').value} | ${document.getElementById('l-bed').value} bed / ${document.getElementById('l-bath').value} bath | ${document.getElementById('l-sqft').value}m² | R${document.getElementById('l-price').value}\nLocation: ${document.getElementById('l-location').value}\nFeatures: ${document.getElementById('l-features').value}\nTone: ${document.getElementById('l-tone').value}\nWrite: catchy headline, 2 rich paragraphs, closing CTA. Sign off as ${agentFull()}, ${agent.agency}.`;
+  } else if (key==='valuation') {
+    if (!document.getElementById('v-location').value) { setLoading(key,false); return; }
+    prompt = `You are a South African property valuation expert. ${agentCtx()} Provide a detailed valuation.\nProperty: ${document.getElementById('v-type').value} | ${document.getElementById('v-bed').value} bed / ${document.getElementById('v-bath').value} bath | ${document.getElementById('v-sqft').value}m² | Built: ${document.getElementById('v-year').value} | Condition: ${document.getElementById('v-condition').value}\nLocation: ${document.getElementById('v-location').value}\nFeatures: ${document.getElementById('v-features').value}\nComps: ${document.getElementById('v-comps').value}\nProvide: 1) Value Range (Low/Mid/High in Rands) 2) Key Value Drivers 3) Value Detractors 4) Recommended Listing Price 5) Rationale.`;
+  } else if (key==='market') {
+    if (!document.getElementById('m-area').value) { setLoading(key,false); return; }
+    prompt = `You are a real estate market analyst. ${agentCtx()} Analyze this market.\nArea: ${document.getElementById('m-area').value} | Type: ${document.getElementById('m-proptype').value} | Range: ${document.getElementById('m-price').value} | Condition: ${document.getElementById('m-condition').value}\nContext: ${document.getElementById('m-notes').value}\nStructure: 1) Market Overview 2) Key Trends 3) Investment Outlook 4) Buyer/Seller Recommendations.`;
+  } else if (key==='neighbourhood') {
+    if (!document.getElementById('n-a').value||!document.getElementById('n-b').value) { setLoading(key,false); return; }
+    prompt = `You are a South African real estate area specialist. ${agentCtx()}\nCompare: ${document.getElementById('n-a').value} vs ${document.getElementById('n-b').value}\nBuyer: ${document.getElementById('n-profile').value} | Focus: ${document.getElementById('n-focus').value} | Budget: ${document.getElementById('n-budget').value}\nStructure: 1) Quick Summary (2 sentences each) 2) Comparison Table: Safety, Schools, Amenities, Transport, Property Values, Rental Yield, Growth, Lifestyle 3) Best For each 4) Verdict.`;
+  } else if (key==='mortgage') {
+    const calc = results['mortgage-calc']||'No bond calculation entered.';
+    const q = document.getElementById('mo-question').value;
+    prompt = `You are a South African mortgage advisor. ${agentCtx()} Bond details: ${calc}\nQuestion: ${q||'Explain these numbers and advise on affordability, risks and what to watch out for.'}\nBe practical and friendly. Include rate-change scenarios if useful.`;
+  } else if (key==='rental') {
+    const price = document.getElementById('ry-price').value;
+    const rent = document.getElementById('ry-rent').value;
+    if (!price||!rent) { setLoading(key,false); return; }
+    const gross = (parseFloat(rent)*12/parseFloat(price)*100).toFixed(2);
+    prompt = `You are a South African property investment advisor. ${agentCtx()}\nWrite a concise investor pitch/summary for this rental property:\nPurchase Price: R${price} | Monthly Rent: R${rent} | Gross Yield: ${gross}%\nMonthly costs: Levy R${document.getElementById('ry-levy').value||0}, Rates R${document.getElementById('ry-rates').value||0}, Maintenance R${document.getElementById('ry-maint').value||0}, Bond R${document.getElementById('ry-bond').value||0}\nVacancy: ${document.getElementById('ry-vacancy').value||8}%\nInclude: investment highlights, risks, who this property suits, and a verdict. Keep it punchy and investor-focused.`;
+  } else if (key==='offers') {
+    const offers = collectOffers();
+    if (!offers.length) { setLoading(key,false); return; }
+    prompt = `You are a South African real estate transaction advisor. ${agentCtx()}\nProperty: ${document.getElementById('of-property').value||'Not specified'}\nAnalyze and rank these ${offers.length} offers:\n${offers.map((o,i)=>`\nOFFER ${i+1} — ${o.buyer}\nPrice: R${o.price}\nConditions: ${o.details}`).join('\n')}\n\nStructure: 1) Quick comparison table 2) Ranking with reasons 3) Key risks per offer 4) Clear recommendation to the seller. Be direct and practical.`;
+  } else if (key==='email') {
+    if (!document.getElementById('e-client').value) { setLoading(key,false); return; }
+    prompt = `You are ${agentFull()}, a real estate agent at ${agent.agency} in ${agent.region}. Write a ${selectedEmailType} email.\nClient: ${document.getElementById('e-client').value}\nProperty: ${document.getElementById('e-property').value}\nKey Points: ${document.getElementById('e-notes').value}\nTone: ${document.getElementById('e-tone').value}\nWrite complete email with Subject, greeting, body, sign-off from ${agentFull()}${agent.phone?', '+agent.phone:''} | ${agent.agency}.`;
+  } else if (key==='tour') {
+    if (!document.getElementById('t-location').value) { setLoading(key,false); return; }
+    prompt = `You are a luxury real estate video scriptwriter. ${agentCtx()} Write a captivating virtual tour script.\nProperty: ${document.getElementById('t-type').value} | ${document.getElementById('t-bed').value} bed / ${document.getElementById('t-bath').value} bath\nLocation: ${document.getElementById('t-location').value}\nStyle: ${document.getElementById('t-style').value}\nRooms: ${document.getElementById('t-rooms').value}\nUSPs: ${document.getElementById('t-usp').value}\nStructure: Opening Hook → Room-by-Room narration with camera cues → CTA from ${agentFull()} at ${agent.agency}. Written as spoken word.`;
+  } else if (key==='social') {
+    if (!document.getElementById('s-property').value) { setLoading(key,false); return; }
+    const phone = agent.phone?` | 📞 ${agent.phone}`:'';
+    prompt = `You are a real estate social media expert. ${agentCtx()} Write posts for: ${selectedPlatforms.join(', ')}.\nProperty: ${document.getElementById('s-property').value}\nHighlights: ${document.getElementById('s-highlights').value}\nCTA: ${document.getElementById('s-cta').value}\nFor each platform: tailored post with right tone, length, emojis, hashtags. Label each platform clearly.\nSign each post: ${agentFull()} | ${agent.agency}${phone}`;
+  }
+
+  const r = await callClaude(prompt);
+  setLoading(key, false);
+  setResult(key, r);
+}
+
+/* ── AI FOLLOW-UP ── */
+async function followUp(key) {
+  const instruction = document.getElementById('fu-'+key).value.trim();
+  if (!instruction || !results[key]) return;
+  const btn = document.querySelector(`#result-${key} .followup-box button`);
+  if (btn) btn.disabled = true;
+  const r = await callClaude(`You previously wrote this:\n\n${results[key]}\n\nPlease update it based on this instruction: "${instruction}"\n\nReturn only the updated version, no preamble.`);
+  if (btn) btn.disabled = false;
+  document.getElementById('fu-'+key).value = '';
+  setResult(key, r);
+}
+
+/* ── MORTGAGE CALC ── */
+function calcMortgage() {
+  const price = parseFloat(document.getElementById('mo-price').value)||0;
+  const deposit = parseFloat(document.getElementById('mo-deposit').value)||0;
+  const rate = parseFloat(document.getElementById('mo-rate').value)||11.75;
+  const years = parseInt(document.getElementById('mo-term').value)||20;
+  const init = parseFloat(document.getElementById('mo-initiation').value)||6037;
+  const inclTD = document.getElementById('mo-transfer').value==='yes';
+  if (!price) { document.getElementById('calc-result').style.display='none'; return; }
+  let td=0;
+  if (inclTD&&price>1100000) {
+    if (price<=1512500) td=(price-1100000)*.03;
+    else if (price<=2117500) td=12375+(price-1512500)*.06;
+    else if (price<=2722500) td=48675+(price-2117500)*.08;
+    else if (price<=12100000) td=97075+(price-2722500)*.11;
+    else td=1128600+(price-12100000)*.13;
+  }
+  const loan=price-deposit+init;
+  const mr=rate/100/12; const n=years*12;
+  const monthly=mr===0?loan/n:loan*mr/(1-Math.pow(1+mr,-n));
+  const total=monthly*n; const interest=total-loan;
+  const fmt=v=>'R'+Math.round(v).toLocaleString('en-ZA');
+  document.getElementById('mo-monthly').textContent=fmt(monthly);
+  document.getElementById('mo-total').textContent=fmt(total);
+  document.getElementById('mo-interest').textContent=fmt(interest);
+  document.getElementById('calc-result').style.display='grid';
+  let bd=`Loan: ${fmt(loan)} · Deposit: ${fmt(deposit)} (${deposit?Math.round(deposit/price*100):0}%)`;
+  if (inclTD&&td>0) bd+=` · Transfer Duty: ${fmt(td)}`;
+  bd+=` · Initiation: ${fmt(init)}`;
+  document.getElementById('mo-breakdown').textContent=bd;
+  document.getElementById('mo-breakdown').style.display='block';
+  results['mortgage-calc']=`Price: ${fmt(price)} | Deposit: ${fmt(deposit)} | Loan: ${fmt(loan)} | Rate: ${rate}% | Term: ${years}yrs | Monthly: ${fmt(monthly)} | Total Repaid: ${fmt(total)} | Total Interest: ${fmt(interest)}${inclTD?` | Transfer Duty: ${fmt(td)}`:''}`;
+}
+
+/* ── RENTAL YIELD CALC ── */
+function calcRental() {
+  const price = parseFloat(document.getElementById('ry-price').value)||0;
+  const rent = parseFloat(document.getElementById('ry-rent').value)||0;
+  if (!price||!rent) { document.getElementById('yield-results').style.display='none'; return; }
+  const levy = parseFloat(document.getElementById('ry-levy').value)||0;
+  const rates = parseFloat(document.getElementById('ry-rates').value)||0;
+  const maint = parseFloat(document.getElementById('ry-maint').value)||0;
+  const bond = parseFloat(document.getElementById('ry-bond').value)||0;
+  const vacancy = (parseFloat(document.getElementById('ry-vacancy').value)||8)/100;
+  const deposit = parseFloat(document.getElementById('ry-deposit').value)||0;
+  const grossAnnual = rent*12*(1-vacancy);
+  const costs = (levy+rates+maint)*12;
+  const netAnnual = grossAnnual-costs;
+  const grossYield = (grossAnnual/price*100).toFixed(1);
+  const netYield = (netAnnual/price*100).toFixed(1);
+  const netMonthly = Math.round(rent*(1-vacancy)-levy-rates-maint-bond);
+  const cashInvested = deposit||price*0.1;
+  const coc = ((netMonthly*12)/cashInvested*100).toFixed(1);
+  const fmt=v=>'R'+Math.round(v).toLocaleString('en-ZA');
+  const gEl = document.getElementById('yr-gross');
+  const nEl = document.getElementById('yr-net');
+  gEl.textContent=grossYield+'%';
+  nEl.textContent=netYield+'%';
+  gEl.className='yield-val '+(parseFloat(grossYield)>=8?'good':parseFloat(grossYield)>=6?'warn':'');
+  nEl.className='yield-val '+(parseFloat(netYield)>=6?'good':parseFloat(netYield)>=4?'warn':'');
+  document.getElementById('yr-monthly').textContent=fmt(netMonthly);
+  document.getElementById('yr-monthly').className='yield-val '+(netMonthly>0?'good':'');
+  document.getElementById('yr-roi').textContent=coc+'%';
+  let verdict = parseFloat(grossYield)>=8?`✅ Strong yield of ${grossYield}% — this is above average for SA and a solid investment case.`:parseFloat(grossYield)>=6?`⚠️ Moderate yield of ${grossYield}% — acceptable but negotiate a better price if possible.`:`❌ Low yield of ${grossYield}% — consider negotiating down the purchase price or increasing the rental.`;
+  if (netMonthly<0) verdict += ` After bond payments, this property generates a negative monthly cash flow of ${fmt(Math.abs(netMonthly))} — ensure the investor can cover the shortfall.`;
+  document.getElementById('yield-verdict').textContent=verdict;
+  document.getElementById('yield-results').style.display='block';
+  results['rental-calc']=`Price: ${fmt(price)} | Monthly Rent: ${fmt(rent)} | Gross Yield: ${grossYield}% | Net Yield: ${netYield}% | Net Monthly Cash: ${fmt(netMonthly)} | Cash-on-Cash ROI: ${coc}%`;
+}
+
+/* ── OFFER COMPARISON ── */
+function addOffer() {
+  if (offerCount>=5) return;
+  const id=offerCount++;
+  const div=document.createElement('div');
+  div.className='offer-entry'; div.id='offer-'+id;
+  div.innerHTML=`<div class="offer-entry-hd"><span class="offer-num">Offer ${id+1}</span><button class="remove-offer" onclick="removeOffer(${id})">✕</button></div><div class="grid2"><div class="fg"><label>Buyer Name / Reference</label><input class="of-buyer" placeholder="e.g. Buyer ${String.fromCharCode(64+id+1)}"/></div><div class="fg"><label>Offer Price (R)</label><input class="of-price" type="number" placeholder="2500000"/></div><div class="fg full"><label>Conditions & Details</label><textarea class="of-details" placeholder="e.g. Cash offer, 30-day transfer, no conditions..."></textarea></div></div>`;
+  document.getElementById('offers-container').appendChild(div);
+}
+
+function removeOffer(id) {
+  const el=document.getElementById('offer-'+id);
+  if (el) el.remove();
+}
+
+function collectOffers() {
+  const offers=[];
+  document.querySelectorAll('.offer-entry').forEach(el=>{
+    const buyer=el.querySelector('.of-buyer')?.value||'Unknown';
+    const price=el.querySelector('.of-price')?.value||'0';
+    const details=el.querySelector('.of-details')?.value||'No details';
+    if (price!=='0') offers.push({buyer,price,details});
+  });
+  return offers;
+}
+
+/* ── CLIENT REPORT ── */
+function toggleReportSection(key) {
+  const tog=document.getElementById('rpt-tog-'+key);
+  if (tog) tog.classList.toggle('active', document.getElementById('rpt-'+key).checked);
+}
+
+function buildClientReport() {
+  const sections=['listing','valuation','market','neighbourhood','rental','mortgage'];
+  const selected=sections.filter(s=>document.getElementById('rpt-'+s)?.checked && results[s]);
+  if (!selected.length) { document.getElementById('rpt-warning').style.display='block'; return; }
+  document.getElementById('rpt-warning').style.display='none';
+  const client=document.getElementById('rpt-client').value||'Valued Client';
+  const property=document.getElementById('rpt-property').value||'Property Report';
+  const intro=document.getElementById('rpt-intro').value||`Dear ${client},\n\nPlease find your personalised property report prepared by ${agentFull()} at ${agent.agency}.`;
+  const sectionTitles={listing:'Property Listing Description',valuation:'Property Valuation Estimate',market:'Market Analysis',neighbourhood:'Neighbourhood Comparison',rental:'Rental Yield & Investment Summary',mortgage:'Bond & Mortgage Advice'};
+  const win=window.open('',' _blank');
+  let body=`<div class="intro">${intro.replace(/\n/g,'<br>')}</div>`;
+  selected.forEach(s=>{ body+=`<div class="section"><h2>${sectionTitles[s]}</h2><pre>${results[s]}</pre></div>`; });
+  win.document.write(`<!DOCTYPE html><html><head><title>Client Report — ${property}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@300;400;500&display=swap');
+    body{font-family:'Jost',Georgia,serif;max-width:760px;margin:0 auto;color:#1a1714;font-size:14.5px;line-height:1.88;padding:2rem}
+    .cover{text-align:center;padding:60px 0 40px;border-bottom:2px solid #c8a96e;margin-bottom:40px}
+    .brand{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#c8a96e;margin-bottom:8px}
+    .cover h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:400;color:#1a1714;margin-bottom:6px}
+    .cover .sub{font-size:13px;color:rgba(26,23,20,.5);letter-spacing:.08em}
+    .intro{padding:24px 28px;background:#f9f6f0;border-left:4px solid #c8a96e;border-radius:4px;margin-bottom:32px;font-size:14px;line-height:1.9}
+    .section{margin-bottom:36px;padding-bottom:36px;border-bottom:1px solid #ece6d8}
+    .section:last-child{border-bottom:none}
+    h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:400;color:#c8a96e;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #ece6d8}
+    pre{white-space:pre-wrap;font-family:'Jost',Georgia,serif;font-size:14px;line-height:1.88}
+    .footer{margin-top:48px;text-align:center;font-size:11px;color:#bbb;letter-spacing:.15em;text-transform:uppercase;padding-top:20px;border-top:1px solid #ece6d8}
+  </style></head><body>
+  <div class="cover">
+    <div class="brand">Estatiq · ${agent.agency}</div>
+    <h1>${property}</h1>
+    <div class="sub">Prepared for ${client} · ${new Date().toLocaleDateString('en-ZA')}</div>
+  </div>
+  ${body}
+  <div class="footer">${agentFull()}${agent.phone?' · '+agent.phone:''} · ${agent.agency} · Powered by Estatiq</div>
+  </body></html>`);
+  win.document.close();
+}
+
+</script>
+<script>
+// ── LOCAL AUTH SYSTEM ──
+var currentUser = null;
+var authToken = null;
+
+// Simple hash function for password storage
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('estatiq_users') || '{}'); } catch(e) { return {}; }
+}
+
+function saveUsers(users) {
+  localStorage.setItem('estatiq_users', JSON.stringify(users));
+}
+
+function getSession() {
+  try { return JSON.parse(sessionStorage.getItem('estatiq_session') || 'null'); } catch(e) { return null; }
+}
+
+// Check for existing session on load
+(function() {
+  var session = getSession();
+  if (session && session.email) {
+    authToken = session.token;
+    showApp(session);
+  }
+})();
+
+function showError(msg) {
+  var el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.color = '#b5686f';
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function showLogin() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('forgot-form').style.display = 'none';
+  document.getElementById('set-password-form').style.display = 'none';
+  document.getElementById('login-title').textContent = 'Welcome back, Agent';
+  document.getElementById('login-subtitle').textContent = 'Sign in with your Estatiq account to access your AI-powered workspace.';
+  hideError();
+}
+
+function showForgot() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('forgot-form').style.display = 'block';
+  document.getElementById('set-password-form').style.display = 'none';
+  document.getElementById('login-title').textContent = 'Reset Password';
+  document.getElementById('login-subtitle').textContent = 'Enter your email to reset your password directly here.';
+  hideError();
+}
+
+function showSetPassword(type, token) {
+  window._authToken = token;
+  window._authType = type;
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('forgot-form').style.display = 'none';
+  document.getElementById('set-password-form').style.display = 'block';
+  document.getElementById('login-title').textContent = type === 'invite' ? 'Set Your Password' : 'Choose New Password';
+  document.getElementById('login-subtitle').textContent = 'Welcome to Estatiq! Choose a password to secure your account.';
+  hideError();
+}
+
+async function doLogin() {
+  hideError();
+  var email = document.getElementById('auth-email').value.trim().toLowerCase();
+  var password = document.getElementById('auth-password').value;
+  if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+  var btn = document.querySelector('#login-form .login-btn');
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+
+  try {
+    var users = getUsers();
+    // First-time use: auto-register the first account
+    if (Object.keys(users).length === 0) {
+      var hash = await hashPassword(password);
+      users[email] = { hash: hash, role: 'admin', created: Date.now() };
+      saveUsers(users);
+      var token = btoa(email + ':' + Date.now());
+      sessionStorage.setItem('estatiq_session', JSON.stringify({ email: email, token: token, role: 'admin' }));
+      authToken = token;
+      showApp({ email: email, token: token });
+      return;
+    }
+
+    var user = users[email];
+    if (!user) { showError('No account found for this email. Ask your admin to add you.'); btn.textContent = 'Sign In to Estatiq'; btn.disabled = false; return; }
+
+    var hash = await hashPassword(password);
+    if (hash !== user.hash) { showError('Incorrect password. Please try again.'); btn.textContent = 'Sign In to Estatiq'; btn.disabled = false; return; }
+
+    var token = btoa(email + ':' + Date.now());
+    sessionStorage.setItem('estatiq_session', JSON.stringify({ email: email, token: token, role: user.role }));
+    authToken = token;
+    showApp({ email: email, token: token });
+  } catch(e) {
+    showError('An error occurred. Please try again.');
+  }
+  btn.textContent = 'Sign In to Estatiq'; btn.disabled = false;
+}
+
+async function doForgot() {
+  hideError();
+  var email = document.getElementById('forgot-email').value.trim().toLowerCase();
+  if (!email) { showError('Please enter your email address.'); return; }
+
+  var btn = document.querySelector('#forgot-form .login-btn');
+  btn.textContent = 'Checking…'; btn.disabled = true;
+
+  var users = getUsers();
+  if (!users[email]) {
+    showError('No account found for this email.');
+    btn.textContent = 'Send Reset Email'; btn.disabled = false;
+    return;
+  }
+
+  // Show the set-password form so they can reset directly
+  showSetPassword('recovery', email);
+  btn.textContent = 'Send Reset Email'; btn.disabled = false;
+}
+
+async function doSetPassword() {
+  hideError();
+  var p1 = document.getElementById('new-password').value;
+  var p2 = document.getElementById('new-password2').value;
+  if (!p1) { showError('Please enter a password.'); return; }
+  if (p1 !== p2) { showError('Passwords do not match.'); return; }
+  if (p1.length < 8) { showError('Password must be at least 8 characters.'); return; }
+
+  var btn = document.querySelector('#set-password-form .login-btn');
+  btn.textContent = 'Setting password…'; btn.disabled = true;
+
+  try {
+    var email = window._authToken; // stored email in token field for recovery
+    var users = getUsers();
+    var hash = await hashPassword(p1);
+
+    if (!users[email]) {
+      users[email] = { hash: hash, role: 'agent', created: Date.now() };
+    } else {
+      users[email].hash = hash;
+    }
+    saveUsers(users);
+
+    var token = btoa(email + ':' + Date.now());
+    sessionStorage.setItem('estatiq_session', JSON.stringify({ email: email, token: token, role: users[email].role }));
+    authToken = token;
+    showApp({ email: email, token: token });
+  } catch(e) {
+    showError('Could not set password. Please try again.');
+  }
+  btn.textContent = 'Set Password & Sign In'; btn.disabled = false;
+}
+
+function showApp(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+}
+
+function signOut() {
+  if (confirm('Sign out of Estatiq?')) {
+    authToken = null;
+    sessionStorage.removeItem('estatiq_session');
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    showLogin();
+  }
+}
+
+
+</script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('signin-btn');
+    if (btn) {
+      btn.addEventListener('click', function() { doLogin(); });
+    }
+  });
+  </script>
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").then(()=>console.log("Estatiq SW registered")).catch(e=>console.log("SW error",e));}</script>
+</body>
